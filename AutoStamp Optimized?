@@ -1,0 +1,74 @@
+import os
+import base64
+import json
+import requests
+from requests.auth import HTTPBasicAuth
+import sys
+import time
+
+# Set the URL, headers, and authentication for the API request
+url = "https://api.counterparty.io"
+headers = {'content-type': 'application/json'}
+auth = HTTPBasicAuth('user', '1234')
+
+# Prompt the user for the transfer address
+transfer_address = input("Enter the transfer address for the assets: ")
+
+# Get the full path to the PNGIN directory
+pngin_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "venv", "PNGIN")
+
+# Check if PNGIN directory exists
+if not os.path.exists(pngin_dir):
+    print("PNGIN directory not found.")
+    sys.exit()
+
+# Get list of PNG files in the PNGIN directory
+png_files = [f for f in os.listdir(pngin_dir) if f.endswith('.png')]
+
+if not png_files:
+    print("No PNG files found in PNGIN directory.")
+    sys.exit()
+
+# Loop through each .png file in the PNGIN directory and convert it to base64
+for file_name in png_files:
+    with open(os.path.join(pngin_dir, file_name), 'rb') as f:
+        base64_img = base64.b64encode(f.read()).decode('utf-8')
+
+    # Set the asset name to the file name (without the extension)
+    asset_name = os.path.splitext(file_name)[0]
+
+    # Create a payload with the base64-encoded image in the description field
+    payload = {
+        "method": "create_issuance",
+        "params": {
+            "source": "mpWyX9b5fczkrNMKjgmLuCgY5eAGc5P5mb",
+            "asset": asset_name,
+            "quantity": 1,
+            "divisible": False,
+            "description": "Stamp: " + base64_img,
+            "lock": True,
+            "transfer_destination": transfer_address,
+            "reset": False,
+            "allow_unconfirmed_inputs": True
+        },
+        "jsonrpc": "2.0",
+        "id": 0
+    }
+
+    # Send the API request with retries
+    retries = 5
+    while retries > 0:
+        response = requests.post(url, data=json.dumps(payload), headers=headers, auth=auth)
+        if response.status_code == 200:
+            print("Response for", file_name, ":", response.text)
+            break
+        else:
+            print(f"Request failed with status code {response.status_code}. Retrying...")
+            retries -= 1
+            time.sleep(5)
+
+    if retries == 0:
+        print(f"Request failed after {retries} retries. Skipping to next file.")
+
+    # Wait for 1 second before sending the next request
+    time.sleep(1)

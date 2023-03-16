@@ -98,5 +98,6 @@ for file_name in files:
         "id": 0
     }
 
-    # Send the API request
-    response = requests.post(url, data=json.dumps
+       # Send the API request
+    response = requests.post(url, data=json.dumps(payload), headers=headers, auth=auth)
+    result = json.loads(response.text)

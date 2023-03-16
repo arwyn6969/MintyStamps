@@ -1,0 +1,186 @@
+const os = require('os');
+const fs = require('fs');
+const path = require('path');
+const base64 = require('base-64');
+const fetch = require('node-fetch');
+const qrcode = require('qrcode');
+const { createCanvas } = require('canvas');
+
+// Function to generate a random asset name with the given format
+function generateAssetName() {
+    return 'A' + Math.floor(Math.random() * (10 ** 20 - 10 ** 19) + 10 ** 19);
+}
+
+// Function to check if the asset name is available using the API
+async function checkAssetAvailability(assetName, url, auth) {
+    const payload = {
+        'method': 'get_asset_info',
+        'params': {
+            'assets': [assetName]
+        },
+        'jsonrpc': '2.0',
+        'id': 0
+    };
+    
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Basic ' + base64.encode(auth)
+        },
+        body: JSON.stringify(payload)
+    });
+    
+    const result = await response.json();
+
+    // If the asset is not found, it's available
+    return 'error' in result && 'Asset not found' in result['error'];
+}
+
+// Function to generate a QR code PNG file
+async function generateQRCodePNG(data, filename) {
+    const canvas = createCanvas(200, 200);
+    await qrcode.toCanvas(canvas, data);
+    const stream = canvas.createPNGStream();
+    const out = fs.createWriteStream(filename);
+    stream.pipe(out);
+    return new Promise((resolve) => {
+        out.on('finish', () => {
+            resolve();
+        });
+    });
+}
+
+// Set the URL, headers, and authentication for the API request
+const url = 'https://api.counterparty.io';
+const headers = { 'Content-Type': 'application/json' };
+const auth = 'user:1234';
+
+// Prompt the user for the transfer and source addresses
+const readline = require('readline').createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+let transferAddress;
+let sourceAddress;
+
+readline.question('Enter the transfer address for the assets: ', (address) => {
+    transferAddress = address;
+    readline.question('Enter the source address for the assets: ', (address) => {
+        sourceAddress = address;
+        readline.close();
+
+        // Get the full path to the IN directory
+        const inDir = path.join(__dirname, 'IN');
+
+        // Check if IN directory exists
+        if (!fs.existsSync(inDir)) {
+            console.log('IN directory not found.');
+            return;
+        }
+
+        // Get list of files in the IN directory
+        const files = fs.readdirSync(inDir).filter(file => fs.statSync(path.join(inDir, file)).isFile());
+
+        if (!files.length) {
+            console.log('No files found in IN directory.');
+            return;
+        }
+
+        let totalSize = 0;
+
+        // Loop through each file in the IN directory and convert it to base64
+        for (const fileName of files) {
+            const file = fs.readFileSync(path.join(inDir, fileName));
+            const base64Data = base64.encode(file.toString('binary'));
+            totalSize += base64Data.length;
+
+            // Generate a random asset name and check its availability
+            let assetName = generateAssetName();
+            while (!(await checkAssetAvailability(assetName, url, auth))) {
+                assetName = generateAssetName();
+            }
+
+               // Calculate the price for the issuance based on the size of the data
+    const price = totalSize * 0.0001; // 0.0001 satoshi per byte
+    const commission = price * 0.2; // 20% commission
+    const totalCost = price + commission;
+
+    // Create a payload with the base64-encoded data in the description field
+    const payload = {
+      method: "create_issuance",
+      params: {
+        source: sourceAddress,
+        asset: assetName,
+        quantity: 1,
+        divisible: false,
+        description: `${fileName}: ${base64Data}`,
+        lock: true,
+        transfer_destination: transferAddress,
+        reset: false,
+        allow_unconfirmed_inputs: true
+      },
+      jsonrpc: "2.0",
+      id: 0
+    };
+
+    // Send the API request
+    fetch(url, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: headers,
+      auth: auth
+    })
+    .then(response => response.json())
+    .then(result => {
+      // Check if the result contains the issuance transaction ID
+      if (result.hasOwnProperty("result")) {
+        const txId = result.result;
+        console.log(`Issuance successful. Transaction ID: ${txId}`);
+
+        // Save issuance as a JSON file in the OUT directory
+        const issuance = {
+          asset_name: assetName,
+          file_name: fileName,
+          tx_id: txId
+        };
+        const outDir = path.join(__dirname, "venv", "OUT");
+        if (!fs.existsSync(outDir)) {
+          fs.mkdirSync(outDir);
+        }
+        const jsonFilePath = path.join(outDir, `${assetName}.json`);
+        fs.writeFileSync(jsonFilePath, JSON.stringify(issuance));
+
+        // Send commission to specific address
+        const commissionPayload = {
+          method: "send",
+          params: {
+            source: sourceAddress,
+            destination: commissionAddress,
+            asset: "BTC",
+            quantity: commission
+          },
+          jsonrpc: "2.0",
+          id: 0
+        };
+        fetch(url, {
+          method: "POST",
+          body: JSON.stringify(commissionPayload),
+          headers: headers,
+          auth: auth
+        })
+        .then(response => response.json())
+        .then(result => {
+          if (result.hasOwnProperty("result")) {
+            console.log(`Commission sent successfully to ${commissionAddress}`);
+          } else {
+            console.error(`Failed to send commission. Error: ${result.error}`);
+          }
+        })
+        .catch(error => console.error(`Error sending commission: ${error}`));
+      } else {
+        console.error(`Failed to create issuance. Error: ${result.error}`);
+      }
+    })
+    .catch(error => console.error(`Error creating issuance: ${error}`));

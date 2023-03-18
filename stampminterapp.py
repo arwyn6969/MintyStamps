@@ -10,6 +10,7 @@ import qrcode
 from PIL import Image
 
 
+
 # Function to generate a random asset name with the given format
 def generate_asset_name():
     return "A" + str(random.randint(10**19, 10**20 - 1))
@@ -28,9 +29,11 @@ def check_asset_availability(asset_name):
 
     response = requests.post(url, data=json.dumps(payload), headers=headers, auth=auth)
     result = json.loads(response.text)
+    print(result)
 
-    # If the asset is not found, it's available
-    return "error" in result and "Asset not found" in result["error"]
+    # If the result is an empty list, the asset does not exist, and the function returns True
+    # If the result contains any content, the asset exists, and the function returns False
+    return len(result["result"]) == 0
 
 
 # Function to generate a QR code PNG file
@@ -40,13 +43,15 @@ def generate_qr_code_png(data, filename):
 
 
 # Set the URL, headers, and authentication for the API request
-url = "https://127.0.0.1:4001"
+url = "http://127.0.0.1:4000"
 headers = {'content-type': 'application/json'}
 auth = HTTPBasicAuth('rpc', 'rpc')
 
 # Prompt the user for the transfer and source addresses
-transfer_address = input("Enter the transfer address for the assets: ")
-source_address = input("Enter the source address for the assets: ")
+transfer_address = "1MZUaVy6y7vmwh2MqMKTFy2JiqXteyevpN" 
+source_address = transfer_address
+#transfer_address = input("Enter the transfer address for the assets: ")
+#source_address = input("Enter the source address for the assets: ")
 
 # Get the full path to the IN directory
 in_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "venv", "IN")
@@ -63,6 +68,8 @@ if not files:
     print("No files found in IN directory.")
     sys.exit()
 
+
+
 # Loop through each file in the IN directory and convert it to base64
 total_size = 0
 for file_name in files:
@@ -72,9 +79,11 @@ for file_name in files:
 
     # Generate a random asset name and check its availability
     asset_name = generate_asset_name()
+    print(asset_name)
     while not check_asset_availability(asset_name):
         asset_name = generate_asset_name()
-
+    print("past asset check") # Debug
+    asset_name="A7739951851191313000"
     # Calculate the price for the issuance based on the size of the data
     price = total_size * 0.0001  # 0.0001 satoshi per byte
     commission = price * 0.2  # 20% commission
@@ -101,3 +110,5 @@ for file_name in files:
        # Send the API request
     response = requests.post(url, data=json.dumps(payload), headers=headers, auth=auth)
     result = json.loads(response.text)
+
+    print(result)

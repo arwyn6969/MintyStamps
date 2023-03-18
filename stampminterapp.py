@@ -40,9 +40,9 @@ def generate_qr_code_png(data, filename):
 
 
 # Set the URL, headers, and authentication for the API request
-url = "https://api.counterparty.io"
+url = "https://127.0.0.1:4001"
 headers = {'content-type': 'application/json'}
-auth = HTTPBasicAuth('user', '1234')
+auth = HTTPBasicAuth('rpc', 'rpc')
 
 # Prompt the user for the transfer and source addresses
 transfer_address = input("Enter the transfer address for the assets: ")

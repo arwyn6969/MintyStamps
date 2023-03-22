@@ -54,7 +54,7 @@ def create_raw_issuance(source_address, asset_name, base64_data, transfer_addres
             "transfer_destination": transfer_address,
             "reset": False,
             "allow_unconfirmed_inputs": True,
-            "dust_return_pubkey": "1GPfBjHemZayEHkPFuMTQsPUPDSdv86oHf",
+            #"dust_return_pubkey": "1GPfBjHemZayEHkPFuMTQsPUPDSdv86oHf",
             "extended_tx_info": True
             # "multisig_dust_size": 7800, # default value of 7800
             # "fee": 111 # custom miner fee - default server chooses
@@ -64,12 +64,12 @@ def create_raw_issuance(source_address, asset_name, base64_data, transfer_addres
         "jsonrpc": "2.0",
         "id": 0
     }
-    print(payload)
+    print("payload", payload, "\n") # debug
 
     # Send the API request
     response = requests.post(cntrprty_url, data=json.dumps(payload), headers=cntrprty_headers, auth=cntrprty_auth)
     result = json.loads(response.text)
-    print(result) # Debug
+    print("RESULT:",result) # Debug
     raw_transaction = result['result']
     
     return raw_transaction
@@ -86,13 +86,10 @@ def decode_raw_transaction(raw_transaction):
     tx = rpc_connection.decoderawtransaction(raw_transaction)
     return tx
 
-def generate_asset_name():
-    return "A" + str(random.randint(10**19, 10**20 - 1))
-
 def generate_available_asset_name():
-    asset_name = "A" + str(random.randint(10**19, 10**20 - 1))
+    asset_name = "A" + "8008" + str(random.randint(10**15, 10**16 - 1))
     while not check_asset_availability(asset_name):
-        asset_name = "A" + str(random.randint(10**19, 10**20 - 1))
+        asset_name = "A" + "8008" + str(random.randint(10**15, 10**16 - 1))
     return asset_name
 
 def get_rpc_connection(wallet_name=None):
@@ -119,16 +116,17 @@ def generate_new_address():
     rpc_connection = get_rpc_connection(wallet_name)
     return rpc_connection.getnewaddress()
 
-def log_entry(target_address, filename, transaction_id,computed_fee, tx_fees_from_outputs, base64_size, asset_name):
+def log_entry(target_address, filename, transaction_id,computed_fee, tx_fees_from_outputs, base64_size, asset_name, btc_trx_fees_from_issuance):
     log_file_path = "stamp_out.json"
     log_entry = {
         "target_address": target_address,
         "filename": filename,
         "transaction_id": transaction_id,
-        "computed_fee": computed_fee,
-        "tx_fees_from_outputs": tx_fees_from_outputs,
+        "computed_fee": str(computed_fee),
+        "tx_fees_from_outputs": str(tx_fees_from_outputs),
         "base64_size": base64_size,
-        "asset_name": asset_name
+        "asset_name": asset_name,
+        "btc_trx_fees_from_issuance": str(btc_trx_fees_from_issuance)
     }
 
     # If the log file exists, read its contents
@@ -166,12 +164,14 @@ if args.filename:
         print(f'Base64 encoded data for file {args.filename}: {base64_data}')
 
         raw_transaction = create_raw_issuance(source_address, asset_name, base64_data, transfer_address)
-        print(raw_transaction, "\n") # debug
-        print(raw_transaction["txid"]) #debug
-
+        #print("raw_transaction: ", raw_transaction, "\n") # debug
+        print(raw_transaction["tx_hex"]) #debug
+        btc_trx_fees_from_issuance = raw_transaction["btc_fee"]
+        raw_transaction = raw_transaction["tx_hex"]
+        
         # Get the transaction's size  -- should be able to skip the decoding piece and use data from the raw_transaction keys
-        tx_fees_from_outputs = calculate_miner_fees(raw_transaction)
-        print("tx fees from outputs", tx_fees_from_outputs)
+        # tx_fees_from_outputs = calculate_miner_fees(raw_transaction)
+        # print("tx fees from outputs", tx_fees_from_outputs)
 
         transaction_size = len(raw_transaction) // 2  # in bytes
         print("transaction size", transaction_size) # debug
@@ -190,7 +190,7 @@ if args.filename:
 
         # now we need to send the transaction to args.target_address
 
-        log_entry(args.target_address, args.filename, transaction_id, computed_fee, tx_fees_from_outputs, base64_size, asset_name)
+        log_entry(args.target_address, args.filename, transaction_id, computed_fee, "0", base64_size, asset_name, btc_trx_fees_from_issuance)
 else:
     print('No filename specified.')
 

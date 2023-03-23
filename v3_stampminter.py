@@ -71,7 +71,6 @@ def create_raw_issuance(source_address, asset_name, base64_data, transfer_addres
     # Send the API request
     response = requests.post(cntrprty_url, data=json.dumps(payload), headers=cntrprty_headers, auth=cntrprty_auth)
     result = json.loads(response.text)
-    print("RESULT:",result) # Debug
 
     try:
         raw_transaction = result['result']
@@ -124,7 +123,7 @@ def generate_new_address():
     rpc_connection = get_rpc_connection(wallet_name)
     return rpc_connection.getnewaddress()
 
-def log_entry(target_address, filename, transaction_id,computed_fee, tx_fees_from_outputs, base64_size, asset_name, btc_trx_fees_from_issuance):
+def log_entry(target_address, filename, transaction_id,computed_fee, tx_fees_from_outputs, base64_size, asset_name, btc_trx_fees_from_issuance, transaction_size):
     log_entry = {
         "target_address": target_address,
         "filename": filename,
@@ -132,6 +131,7 @@ def log_entry(target_address, filename, transaction_id,computed_fee, tx_fees_fro
         "computed_fee": str(computed_fee),
         "tx_fees_from_outputs": str(tx_fees_from_outputs),
         "base64_size": base64_size,
+        "transaction_size": transaction_size,
         "asset_name": asset_name,
         "btc_trx_fees_from_issuance": str(btc_trx_fees_from_issuance)
     }
@@ -204,7 +204,7 @@ if args.filename:
 
             # now we need to send the transaction to args.target_address
 
-            log_entry(args.target_address, filename, transaction_id, computed_fee, "0", base64_size, asset_name, btc_trx_fees_from_issuance)
+            log_entry(args.target_address, filename, transaction_id, computed_fee, "0", base64_size, asset_name, btc_trx_fees_from_issuance, transaction_size)
 
 else:
     print('No filename specified.')

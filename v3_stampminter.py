@@ -54,7 +54,7 @@ def create_raw_issuance(source_address, asset_name, base64_data, transfer_addres
             "transfer_destination": transfer_address,
             "reset": False,
             "allow_unconfirmed_inputs": True,
-            #"dust_return_pubkey": "1GPfBjHemZayEHkPFuMTQsPUPDSdv86oHf",
+            #"dust_return_pubkey": ":",
             "extended_tx_info": True
             # "multisig_dust_size": 7800, # default value of 7800
             # "fee": 111 # custom miner fee - default server chooses
@@ -87,9 +87,9 @@ def decode_raw_transaction(raw_transaction):
     return tx
 
 def generate_available_asset_name():
-    asset_name = "A" + "8008" + str(random.randint(10**15, 10**16 - 1))
+    asset_name = "A" + str(random.randint(26**12 + 1 - 8008, 2**64 - 1 - 8008))
     while not check_asset_availability(asset_name):
-        asset_name = "A" + "8008" + str(random.randint(10**15, 10**16 - 1))
+        asset_name = "A" + str(random.randint(26**12 + 1 - 8008, 2**64 - 1 - 8008))
     return asset_name
 
 def get_rpc_connection(wallet_name=None):

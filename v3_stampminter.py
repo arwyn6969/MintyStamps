@@ -66,12 +66,12 @@ def create_raw_issuance(source_address, asset_name, base64_data, transfer_addres
         "jsonrpc": "2.0",
         "id": 0
     }
-    print("payload", payload, "\n") # debug
+    # print("payload", payload, "\n") # debug
 
     # Send the API request
     response = requests.post(cntrprty_url, data=json.dumps(payload), headers=cntrprty_headers, auth=cntrprty_auth)
     result = json.loads(response.text)
-
+    print("RESULT:",result) # Debug
     try:
         raw_transaction = result['result']
     except KeyError:

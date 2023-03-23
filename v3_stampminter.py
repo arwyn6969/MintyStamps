@@ -94,9 +94,10 @@ def decode_raw_transaction(raw_transaction):
     return tx
 
 def generate_available_asset_name():
-    asset_name = "A" + str(random.randint(26**12 + 1 - 8008, 2**64 - 1 - 8008))
+    asset_name = "A" + "8008" + str(random.randint(0, 2**52 - 1))
+    # asset_name = "A" + str(random.randint(26**12 + 1 - 8008, 2**64 - 1 - 8008))
     while not check_asset_availability(asset_name):
-        asset_name = "A" + str(random.randint(26**12 + 1 - 8008, 2**64 - 1 - 8008))
+        asset_name = "A" + "8008" + str(random.randint(0, 2**52 - 1))
     return asset_name
 
 def get_rpc_connection(wallet_name=None):

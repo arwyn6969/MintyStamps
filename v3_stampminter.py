@@ -165,11 +165,11 @@ source_address = "1GPfBjHemZayEHkPFuMTQsPUPDSdv86oHf" # stampmint
 transfer_address = source_address # must be same as source address
 
 # Read file and encode to base64
-if args.filename:
-    with open(args.filename, 'rb') as f:
+if filename:
+    with open(filename, 'rb') as f:
         base64_data = base64.b64encode(f.read()).decode('utf-8')
         base64_size = len(base64_data)
-        print(f'Base64 encoded data for file {args.filename}: {base64_data}')
+        print(f'Base64 encoded data for file {filename}: {base64_data}')
 
         raw_transaction = create_raw_issuance(source_address, asset_name, base64_data, transfer_address)
         #print("raw_transaction: ", raw_transaction, "\n") # debug

@@ -9,11 +9,9 @@ from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('--filename', help='Name of the file(s) to encode')
+parser.add_argument('--filename', nargs='+', help='Name(s) of the file(s) to encode')
 parser.add_argument('--target-address', help='Bitcoin address to send the transaction to')
 args = parser.parse_args()
-
-filename = args.filename
 
 # Bitcoin Core node connection
 rpc_user = "rpc"
@@ -165,42 +163,43 @@ source_address = "1GPfBjHemZayEHkPFuMTQsPUPDSdv86oHf" # stampmint
 transfer_address = source_address # must be same as source address
 
 # Read file and encode to base64
-if filename:
-    with open(filename, 'rb') as f:
-        base64_data = base64.b64encode(f.read()).decode('utf-8')
-        base64_size = len(base64_data)
-        print(f'Base64 encoded data for file {filename}: {base64_data}')
+if args.filename:
+    for filename in args.filename:
+        with open(filename, 'rb') as f:
+            base64_data = base64.b64encode(f.read()).decode('utf-8')
+            base64_size = len(base64_data)
+            print(f'Base64 encoded data for file {filename}: {base64_data}')
 
-        raw_transaction = create_raw_issuance(source_address, asset_name, base64_data, transfer_address)
-        #print("raw_transaction: ", raw_transaction, "\n") # debug
-        print(raw_transaction["tx_hex"]) #debug
-        btc_trx_fees_from_issuance = raw_transaction["btc_fee"]
-        raw_transaction = raw_transaction["tx_hex"]
-        
-        # Get the transaction's size  -- should be able to skip the decoding piece and use data from the raw_transaction keys
-        # tx_fees_from_outputs = calculate_miner_fees(raw_transaction)
-        # print("tx fees from outputs", tx_fees_from_outputs)
+            raw_transaction = create_raw_issuance(source_address, asset_name, base64_data, transfer_address)
+            #print("raw_transaction: ", raw_transaction, "\n") # debug
+            print(raw_transaction["tx_hex"]) #debug
+            btc_trx_fees_from_issuance = raw_transaction["btc_fee"]
+            raw_transaction = raw_transaction["tx_hex"]
+            
+            # Get the transaction's size  -- should be able to skip the decoding piece and use data from the raw_transaction keys
+            # tx_fees_from_outputs = calculate_miner_fees(raw_transaction)
+            # print("tx fees from outputs", tx_fees_from_outputs)
 
-        transaction_size = len(raw_transaction) // 2  # in bytes
-        print("transaction size", transaction_size) # debug
+            transaction_size = len(raw_transaction) // 2  # in bytes
+            print("transaction size", transaction_size) # debug
 
-        print("base64 size:", base64_size)
-        # Calculate the transaction fee based on size and fee rate
-        computed_fee = transaction_size * current_fee_rate / 1000  # in BTC
+            print("base64 size:", base64_size)
+            # Calculate the transaction fee based on size and fee rate
+            computed_fee = transaction_size * current_fee_rate / 1000  # in BTC
 
-        print("computed fees", computed_fee) # Debug
+            print("computed fees", computed_fee) # Debug
 
-        # Sign the transaction
-        signed_transaction = sign_raw_transaction_with_wallet(raw_transaction)
-        # Broadcast the signed transaction
-        transaction_id = broadcast_signed_transaction(signed_transaction)
-        print(f"Transaction ID: {transaction_id}")
+            # Sign the transaction
+            signed_transaction = sign_raw_transaction_with_wallet(raw_transaction)
+            # Broadcast the signed transaction
+            transaction_id = broadcast_signed_transaction(signed_transaction)
+            print(f"Transaction ID: {transaction_id}")
 
-        os.remove(os.path.join(os.path.dirname(os.path.abspath(__file__)), filename))
+            os.remove(os.path.join(os.path.dirname(os.path.abspath(__file__)), filename))
 
-        # now we need to send the transaction to args.target_address
+            # now we need to send the transaction to args.target_address
 
-        log_entry(args.target_address, args.filename, transaction_id, computed_fee, "0", base64_size, asset_name, btc_trx_fees_from_issuance)
+            log_entry(args.target_address, filename, transaction_id, computed_fee, "0", base64_size, asset_name, btc_trx_fees_from_issuance)
 
 else:
     print('No filename specified.')

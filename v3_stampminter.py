@@ -25,6 +25,8 @@ cntrprty_auth = HTTPBasicAuth('rpc', 'rpc')
 
 wallet_name = "stampmint"
 
+log_file_path = "stamp_out.json"
+
 def check_asset_availability(asset_name):
     payload = {
         "method": "get_asset_info",
@@ -117,7 +119,6 @@ def generate_new_address():
     return rpc_connection.getnewaddress()
 
 def log_entry(target_address, filename, transaction_id,computed_fee, tx_fees_from_outputs, base64_size, asset_name, btc_trx_fees_from_issuance):
-    log_file_path = "stamp_out.json"
     log_entry = {
         "target_address": target_address,
         "filename": filename,
@@ -189,6 +190,10 @@ if args.filename:
         print(f"Transaction ID: {transaction_id}")
 
         # now we need to send the transaction to args.target_address
+        with open(log_file_path, 'r') as log_file:
+            log_data = log_file.read()
+            print(log_data)
+
 
         log_entry(args.target_address, args.filename, transaction_id, computed_fee, "0", base64_size, asset_name, btc_trx_fees_from_issuance)
 else:

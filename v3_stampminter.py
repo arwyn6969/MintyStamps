@@ -206,7 +206,7 @@ if args.filename:
             # Store the processed file data
             processed_files.append({
                 "filename": filename,
-                "computed_fee": computed_fee
+                "computed_fee": str(computed_fee)
             })
 
             if not args.check:
@@ -228,7 +228,7 @@ if args.filename:
     if args.check:
         output = {
             "processed_files": processed_files,
-            "total_fees": total_fees
+            "total_fees": str(total_fees)
         }
         print(json.dumps(output, indent=2))
 else:

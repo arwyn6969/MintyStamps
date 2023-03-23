@@ -16,10 +16,10 @@ args = parser.parse_args()
 # Bitcoin Core node connection
 rpc_user = "rpc"
 rpc_password = "rpc"
-rpc_ip = "127.0.0.1"
+rpc_ip = "192.168.17.194"
 rpc_port = 8332
 
-cntrprty_url = "http://127.0.0.1:4000"
+cntrprty_url = "http://192.168.17.194:4000"
 cntrprty_headers = {'content-type': 'application/json'}
 cntrprty_auth = HTTPBasicAuth('rpc', 'rpc')
 

@@ -172,7 +172,11 @@ if args.filename:
 
             raw_transaction = create_raw_issuance(source_address, asset_name, base64_data, transfer_address)
             #print("raw_transaction: ", raw_transaction, "\n") # debug
-            print(raw_transaction["tx_hex"]) #debug
+            if raw_transaction is None:
+                print("Error creating raw transaction. Bye.")
+                exit()
+            else:
+                print(raw_transaction["tx_hex"]) #debug
             btc_trx_fees_from_issuance = raw_transaction["btc_fee"]
             raw_transaction = raw_transaction["tx_hex"]
             

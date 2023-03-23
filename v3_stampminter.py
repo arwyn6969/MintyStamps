@@ -71,7 +71,7 @@ def create_raw_issuance(source_address, asset_name, base64_data, transfer_addres
     # Send the API request
     response = requests.post(cntrprty_url, data=json.dumps(payload), headers=cntrprty_headers, auth=cntrprty_auth)
     result = json.loads(response.text)
-    print("RESULT:",result) # Debug
+    # print("RESULT:",result) # Debug
     try:
         raw_transaction = result['result']
     except KeyError:
@@ -180,8 +180,8 @@ if args.filename:
                 if raw_transaction is None:
                     print("Error creating raw transaction. Bye.")
                     exit()
-                else:
-                    print(raw_transaction["tx_hex"]) #debug
+                # else:
+                #     print(raw_transaction["tx_hex"]) #debug
                 btc_trx_fees_from_issuance = raw_transaction["btc_fee"]
                 raw_transaction = raw_transaction["tx_hex"]
                 

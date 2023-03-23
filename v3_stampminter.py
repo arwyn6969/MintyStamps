@@ -11,6 +11,7 @@ from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 parser = argparse.ArgumentParser()
 parser.add_argument('--filename', nargs='+', help='Name(s) of the file(s) to encode')
 parser.add_argument('--target-address', help='Bitcoin address to send the transaction to')
+parser.add_argument('--check', action='store_true', help='Check fees without actually processing the files')
 args = parser.parse_args()
 
 # Bitcoin Core node connection
@@ -24,8 +25,8 @@ cntrprty_headers = {'content-type': 'application/json'}
 cntrprty_auth = HTTPBasicAuth('rpc', 'rpc')
 
 wallet_name = "stampmint"
-
 log_file_path = "stamp_out.json"
+total_fees = 0
 
 def check_asset_availability(asset_name):
     payload = {
@@ -167,6 +168,7 @@ transfer_address = source_address # must be same as source address
 
 # Read file and encode to base64, create transaction, sign it, broadcast it
 if args.filename:
+    processed_files = []  # List to store processed file data
     for filename in args.filename:
         if os.path.exists(filename):
             with open(filename, 'rb') as f:
@@ -199,6 +201,15 @@ if args.filename:
 
                 print("computed fees", computed_fee) # Debug
 
+            total_fees += computed_fee
+
+            # Store the processed file data
+            processed_files.append({
+                "filename": filename,
+                "computed_fee": computed_fee
+            })
+
+            if not args.check:
                 # Sign the transaction
                 signed_transaction = sign_raw_transaction_with_wallet(raw_transaction)
                 # Broadcast the signed transaction
@@ -212,7 +223,13 @@ if args.filename:
                 log_entry(args.target_address, filename, transaction_id, computed_fee, "0", base64_size, asset_name, btc_trx_fees_from_issuance, transaction_size, current_fee_rate)
         else:
             print(f"File not found: {filename}")
+
+    # Print the JSON output with computed fees, filenames, and total fees only if --check is used
+    if args.check:
+        output = {
+            "processed_files": processed_files,
+            "total_fees": total_fees
+        }
+        print(json.dumps(output, indent=2))
 else:
     print('No filename specified.')
-
-

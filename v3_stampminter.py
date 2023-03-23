@@ -164,49 +164,53 @@ print("asset name:", asset_name) # debug
 source_address = "1GPfBjHemZayEHkPFuMTQsPUPDSdv86oHf" # stampmint
 transfer_address = source_address # must be same as source address
 
-# Read file and encode to base64
+# Read file and encode to base64, create transaction, sign it, broadcast it
 if args.filename:
     for filename in args.filename:
-        with open(filename, 'rb') as f:
-            base64_data = base64.b64encode(f.read()).decode('utf-8')
-            base64_size = len(base64_data)
-            # print(f'Base64 encoded data for file {filename}: {base64_data}') # debug
+        if os.path.exists(filename):
+            with open(filename, 'rb') as f:
+                base64_data = base64.b64encode(f.read()).decode('utf-8')
+                base64_size = len(base64_data)
 
-            raw_transaction = create_raw_issuance(source_address, asset_name, base64_data, transfer_address)
-            #print("raw_transaction: ", raw_transaction, "\n") # debug
-            if raw_transaction is None:
-                print("Error creating raw transaction. Bye.")
-                exit()
-            else:
-                print(raw_transaction["tx_hex"]) #debug
-            btc_trx_fees_from_issuance = raw_transaction["btc_fee"]
-            raw_transaction = raw_transaction["tx_hex"]
-            
-            # Get the transaction's size  -- should be able to skip the decoding piece and use data from the raw_transaction keys
-            # tx_fees_from_outputs = calculate_miner_fees(raw_transaction)
-            # print("tx fees from outputs", tx_fees_from_outputs)
 
-            transaction_size = len(raw_transaction) // 2  # in bytes
-            print("transaction size", transaction_size) # debug
+                # print(f'Base64 encoded data for file {filename}: {base64_data}') # debug
 
-            print("base64 size:", base64_size)
-            # Calculate the transaction fee based on size and fee rate
-            computed_fee = transaction_size * current_fee_rate / 1000  # in BTC
+                raw_transaction = create_raw_issuance(source_address, asset_name, base64_data, transfer_address)
+                #print("raw_transaction: ", raw_transaction, "\n") # debug
+                if raw_transaction is None:
+                    print("Error creating raw transaction. Bye.")
+                    exit()
+                else:
+                    print(raw_transaction["tx_hex"]) #debug
+                btc_trx_fees_from_issuance = raw_transaction["btc_fee"]
+                raw_transaction = raw_transaction["tx_hex"]
+                
+                # Get the transaction's size  -- should be able to skip the decoding piece and use data from the raw_transaction keys
+                # tx_fees_from_outputs = calculate_miner_fees(raw_transaction)
+                # print("tx fees from outputs", tx_fees_from_outputs)
 
-            print("computed fees", computed_fee) # Debug
+                transaction_size = len(raw_transaction) // 2  # in bytes
+                print("transaction size", transaction_size) # debug
 
-            # Sign the transaction
-            signed_transaction = sign_raw_transaction_with_wallet(raw_transaction)
-            # Broadcast the signed transaction
-            transaction_id = broadcast_signed_transaction(signed_transaction)
-            print(f"Transaction ID: {transaction_id}")
+                print("base64 size:", base64_size)
+                # Calculate the transaction fee based on size and fee rate
+                computed_fee = transaction_size * current_fee_rate / 1000  # in BTC
 
-            os.remove(os.path.join(os.path.dirname(os.path.abspath(__file__)), filename))
+                print("computed fees", computed_fee) # Debug
 
-            # now we need to send the transaction to args.target_address
+                # Sign the transaction
+                signed_transaction = sign_raw_transaction_with_wallet(raw_transaction)
+                # Broadcast the signed transaction
+                transaction_id = broadcast_signed_transaction(signed_transaction)
+                print(f"Transaction ID: {transaction_id}")
 
-            log_entry(args.target_address, filename, transaction_id, computed_fee, "0", base64_size, asset_name, btc_trx_fees_from_issuance, transaction_size)
+                os.remove(os.path.join(os.path.dirname(os.path.abspath(__file__)), filename))
 
+                # now we need to send the transaction to args.target_address
+
+                log_entry(args.target_address, filename, transaction_id, computed_fee, "0", base64_size, asset_name, btc_trx_fees_from_issuance, transaction_size)
+        else:
+            print(f"File not found: {filename}")
 else:
     print('No filename specified.')
 

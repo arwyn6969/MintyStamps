@@ -13,6 +13,8 @@ parser.add_argument('--filename', help='Name of the file(s) to encode')
 parser.add_argument('--target-address', help='Bitcoin address to send the transaction to')
 args = parser.parse_args()
 
+filename = args.filename
+
 # Bitcoin Core node connection
 rpc_user = "rpc"
 rpc_password = "rpc"
@@ -72,8 +74,13 @@ def create_raw_issuance(source_address, asset_name, base64_data, transfer_addres
     response = requests.post(cntrprty_url, data=json.dumps(payload), headers=cntrprty_headers, auth=cntrprty_auth)
     result = json.loads(response.text)
     print("RESULT:",result) # Debug
-    raw_transaction = result['result']
-    
+
+    try:
+        raw_transaction = result['result']
+    except KeyError:
+        print(f"Error: {result['error']['message']}")
+        return None
+
     return raw_transaction
 
 def calculate_miner_fees(raw_transaction):
@@ -189,13 +196,12 @@ if args.filename:
         transaction_id = broadcast_signed_transaction(signed_transaction)
         print(f"Transaction ID: {transaction_id}")
 
-        # now we need to send the transaction to args.target_address
-        with open(log_file_path, 'r') as log_file:
-            log_data = log_file.read()
-            print(log_data)
+        os.remove(os.path.join(os.path.dirname(os.path.abspath(__file__)), filename))
 
+        # now we need to send the transaction to args.target_address
 
         log_entry(args.target_address, args.filename, transaction_id, computed_fee, "0", base64_size, asset_name, btc_trx_fees_from_issuance)
+
 else:
     print('No filename specified.')
 

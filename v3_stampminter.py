@@ -125,12 +125,12 @@ def generate_new_address():
     rpc_connection = get_rpc_connection(wallet_name)
     return rpc_connection.getnewaddress()
 
-def log_entry(target_address, filename, transaction_id,computed_fee, tx_fees_from_outputs, base64_size, asset_name, btc_trx_fees_from_issuance, transaction_size, current_fee_rate):
+def log_entry(target_address, filename, transaction_id, computed_fee, tx_fees_from_outputs, base64_size, asset_name, btc_trx_fees_from_issuance, transaction_size, current_fee_rate):
     log_entry = {
         "target_address": target_address,
         "filename": filename,
         "transaction_id": transaction_id,
-        "current_fee_rate": current_fee_rate,
+        "current_fee_rate": str(current_fee_rate),
         "computed_fee": str(computed_fee),
         "tx_fees_from_outputs": str(tx_fees_from_outputs),
         "base64_size": base64_size,

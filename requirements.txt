@@ -1,0 +1,4 @@
+requests
+python-bitcoinrpc
+wheel
+boto3
